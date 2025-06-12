@@ -35,7 +35,7 @@ def Template(m,z,sample_rate,flow):
 det1 = Detector('H1')
 det2=Detector('L1') 
 # det3=Detector('V1') 
-det4=Detector('I1')
+# det4=Detector('I1')
 
 #For face on binary there is no impact on amplitude due to polarization angle 
 psi=0 #setting psi to zero
@@ -58,7 +58,7 @@ M=np.linspace(20,1000,100)
 
 
 #Array of redshifts
-Z=np.linspace(1e-2,2,500)
+Z=np.linspace(1e-2,4,500)
 
 
 duration=16#int(len(Template(M[0],Z[0],sample_rate,flow)[0].sample_times)/sample_rate)
@@ -86,7 +86,7 @@ def SNR_pattern(ra,dec,hp,hc,flow):
     h1_temporary=[]
     h2_temporary=[]
     # h3_temporary=[]
-    h4_temporary=[]
+    # h4_temporary=[]
     
     #Calcuating antenna function for different segments
 
@@ -106,7 +106,7 @@ def SNR_pattern(ra,dec,hp,hc,flow):
 
         # F_plus3, F_cross3 = det3.antenna_pattern(ra, dec, psi, geocent_time+i)
         
-        F_plus4, F_cross4 = det4.antenna_pattern(ra, dec, psi, geocent_time+i)
+        # F_plus4, F_cross4 = det4.antenna_pattern(ra, dec, psi, geocent_time+i)
 
         #Getting the full signal with antenna function
 
@@ -116,12 +116,12 @@ def SNR_pattern(ra,dec,hp,hc,flow):
 
         # h3=hp_aux*F_plus3+hc_aux*F_cross3
 
-        h4=hp_aux*F_plus4+hc_aux*F_cross4
+        # h4=hp_aux*F_plus4+hc_aux*F_cross4
         
         h1_temporary.append(h1)
         h2_temporary.append(h2)
         # h3_temporary.append(h3)
-        h4_temporary.append(h4)
+        # h4_temporary.append(h4)
         
     #Final signal at a detector
     h1=np.array(h1_temporary).flatten()
@@ -136,9 +136,9 @@ def SNR_pattern(ra,dec,hp,hc,flow):
     # h3=TimeSeries(h3,delta_t=delta_t)
     # h3.resize(tlen)
 
-    h4=np.array(h4_temporary).flatten()
-    h4=TimeSeries(h4,delta_t=delta_t,epoch=start)
-    h4.resize(tlen)
+    # h4=np.array(h4_temporary).flatten()
+    # h4=TimeSeries(h4,delta_t=delta_t,epoch=start)
+    # h4.resize(tlen)
     
 
     #Calculating optimal SNR
@@ -148,10 +148,10 @@ def SNR_pattern(ra,dec,hp,hc,flow):
 
     # sigma3=sigma(h3, psd=psdv, low_frequency_cutoff=flow)
 
-    sigma4=sigma(h4, psd=psd, low_frequency_cutoff=flow)
+    # sigma4=sigma(h4, psd=psd, low_frequency_cutoff=flow)
    
 
-    return  (sigma1+sigma2+sigma4)**(0.5)
+    return  (sigma1**2+sigma2**2)**(0.5)
 
 
 
@@ -217,6 +217,5 @@ plt.grid(which='both', linestyle='-', linewidth=0.5, color='gray')
 plt.ylim(5e-3,3)
 plt.legend()
 plt.show()
-
 
 
