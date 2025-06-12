@@ -35,7 +35,7 @@ def Template(m,z,sample_rate,flow):
 det1 = Detector('H1')
 det2=Detector('L1') 
 # det3=Detector('V1') 
-det4=Detector('A1')
+det4=Detector('I1')
 
 #For face on binary there is no impact on amplitude due to polarization angle 
 psi=0 #setting psi to zero
@@ -47,10 +47,22 @@ geocent_time=1126259463 #Just a time nothing special about it
 sample_rate=1024
 
 #lower frequency cutoff
-flow=15
+flow=20
+
+#ra, dec
+ra=np.random.uniform(0,2*np.pi,size=48)
+dec=np.random.uniform(-np.pi/2,np.pi/2,size=48)
+
+#Array of mass of a component of equal mass binary system
+M=np.linspace(20,1000,100)
 
 
-duration=5
+#Array of redshifts
+Z=np.linspace(1e-2,2,500)
+
+
+duration=16#int(len(Template(M[0],Z[0],sample_rate,flow)[0].sample_times)/sample_rate)
+# print(duration)
 delta_t=1/sample_rate
 delta_f=1/duration#spacing between two frequencies 
 flen = int(sample_rate / (2 * delta_f)) + 1 #length of psd
@@ -64,16 +76,11 @@ psdv=pycbc.psd.AdvVirgo(flen,delta_f,flow)
 #Function to calculate SNR with antenna pattern included
 
 def SNR_pattern(ra,dec,hp,hc,flow):
-
-    #Removing zeros before signal started in order to get small segement of data 
-
-    hp=hp[(hp.sample_times>-4) & (hp.sample_times<1)]
-    hc=hc[(hc.sample_times>-4) & (hc.sample_times<1)]
-
-    #These are array so need to convert in Timeseries
     
-    hp=TimeSeries(hp, delta_t=delta_t)
-    hc=TimeSeries(hc, delta_t=delta_t)
+    
+    start=hp.sample_times.numpy()[0]
+    end=hp.sample_times.numpy()[-1]
+    Time_range=np.arange(start,end,1)
 
     #To append all small segement of signal calucated
     h1_temporary=[]
@@ -82,13 +89,14 @@ def SNR_pattern(ra,dec,hp,hc,flow):
     h4_temporary=[]
     
     #Calcuating antenna function for different segments
-    
-    for i in range(int(len(hp.sample_times)/sample_rate)): 
+
+
+    for i in Time_range: 
 
         #Getting a small segment of timeseries in order to take into account antenna pattern's time variation
         
-        hp_aux=hp[(hp.sample_times>i)&(hp.sample_times<i+1)]
-        hc_aux=hc[(hc.sample_times>i)&(hc.sample_times<i+1)]
+        hp_aux=hp.time_slice(i,i+1)
+        hc_aux=hc.time_slice(i,i+1)
 
         # Antenna pattern at particular time
 
@@ -117,11 +125,11 @@ def SNR_pattern(ra,dec,hp,hc,flow):
         
     #Final signal at a detector
     h1=np.array(h1_temporary).flatten()
-    h1=TimeSeries(h1,delta_t=delta_t)
+    h1=TimeSeries(h1,delta_t=delta_t,epoch=start)
     h1.resize(tlen)
 
     h2=np.array(h2_temporary).flatten()
-    h2=TimeSeries(h2,delta_t=delta_t)
+    h2=TimeSeries(h2,delta_t=delta_t,epoch=start)
     h2.resize(tlen)
 
     # h3=np.array(h3_temporary).flatten()
@@ -129,7 +137,7 @@ def SNR_pattern(ra,dec,hp,hc,flow):
     # h3.resize(tlen)
 
     h4=np.array(h4_temporary).flatten()
-    h4=TimeSeries(h4,delta_t=delta_t)
+    h4=TimeSeries(h4,delta_t=delta_t,epoch=start)
     h4.resize(tlen)
     
 
@@ -146,16 +154,6 @@ def SNR_pattern(ra,dec,hp,hc,flow):
     return  (sigma1+sigma2+sigma4)**(0.5)
 
 
-#ra, dec
-ra=np.random.uniform(0,2*np.pi,size=48)
-dec=np.random.uniform(-np.pi/2,np.pi/2,size=48)
-
-#Array of mass of a component of equal mass binary system
-M=np.linspace(20,1000,100)
-
-
-#Array of redshifts
-Z=np.linspace(1e-2,3,500)
 
 
 
@@ -168,7 +166,7 @@ def Horizon_distance_equal_mass(m):
         if not all(l == 1 for l in flag):
             hp,hc=Template((1+x)*m,x,sample_rate,flow)# Template generate for a particular mass and redshift
             snr_all=[]
-            index=[]
+
             for i in range(len(ra)):
                 j=-1
                 if flag[i]==0:
@@ -198,6 +196,7 @@ if __name__ == '__main__':
         r = list(tqdm(p.imap(Horizon_distance_equal_mass, M), total=len(M)))
 M_tot,z_50,z_90,max=zip(*r)
 
+
 # Save the list to a file
 with open("Total_mass_"+key+".pkl", "wb") as f:
     pickle.dump(M_tot, f)
@@ -218,5 +217,6 @@ plt.grid(which='both', linestyle='-', linewidth=0.5, color='gray')
 plt.ylim(5e-3,3)
 plt.legend()
 plt.show()
+
 
 
