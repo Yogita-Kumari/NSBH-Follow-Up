@@ -1,0 +1,82 @@
+# Creating psd
+
+bayestar-sample-model-psd -o psd.xml --H1=aLIGOAPlusDesignSensitivityT1800042 --L1=aLIGOAPlusDesignSensitivityT1800042 --I1=aLIGOAPlusDesignSensitivityT1800042 --I1-scale=0.75
+
+
+#Making distribution sample
+
+#!/bin/bash
+from astropy.table import Table
+import numpy as np
+
+n = 1000
+samples = Table({
+    'mass1': np.array([1.4]*n),
+    'mass2': np.random.uniform(3, 10, size=n),
+    'spin1z': np.array([0]*n),
+    'spin2z': np.array([0]*n),
+})
+samples.write('my_samples.ecsv', format='ascii.ecsv', overwrite=True)
+
+
+# Creating injections
+
+#!/bin/bash
+bayestar-inject --distribution-samples my_samples.ecsv --reference-psd psd.xml --f-low 20.0 --snr-threshold 6 --min-triggers 2 --max-distance 1500 --waveform IMRPhenomD --nsamples 1000 -o inj.xml -j 10
+
+
+
+#Getting Coincidences
+
+#!/bin/bash
+bayestar-realize-coincs -o coinc.xml inj.xml --reference-psd psd.xml --detector H1 L1 I1 --measurement-error gaussian-noise --snr-threshold 4.0 --net-snr-threshold 12.0 --min-triggers 2 --keep-subthreshold --duty-cycle 1 -j 10
+
+
+#Localizing found coincidences
+
+#!/bin/bash
+export OMP_NUM_THREADS=10
+bayestar-localize-coincs coinc.xml --waveform IMRPhenomD --output sky_results --max-distance 1500 
+
+
+
+# To get sqlite file (to be used in sky map statistics)
+
+#!/bin/bash
+igwn_ligolw_sqlite --preserve-ids --replace --database coinc.sqlite coinc.xml
+
+
+
+#For getting statistics
+#!/bin/bash
+ligo-skymap-stats -o bayestar.tsv --database coinc.sqlite *.fits --contour 50 90 --area 10 100 --modes -j 8
+
+
+
+#For plotting statistical results
+
+#!/bin/bash
+ligo-skymap-plot-stats bayestar.tsv --cumulative --normed --output stat_local
+
+#For getting mean value
+
+from astropy.table import Table
+import numpy as np
+data=Table.read("bayestar.tsv", format="ascii.tab")
+searched_area=data['searched_area']
+
+print(f"Min searched area: {np.min(searched_area):.2f} deg²")
+print(f"Max searched area: {np.max(searched_area):.2f} deg²")
+print(f"Mean searched area: {np.mean(searched_area):.2f} deg²")
+print(f"Median searched area: {np.median(searched_area):.2f} deg²")
+
+
+
+#For getting mollweide projection
+
+#!/bin/bash
+ligo-skymap-plot 0.fits -o 0.png --annotate --colorbar --contour 50 90
+
+
+
+
