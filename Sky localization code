@@ -22,20 +22,20 @@ samples.write('my_samples.ecsv', format='ascii.ecsv', overwrite=True)
 # Creating injections
 
 #!/bin/bash
-bayestar-inject --distribution-samples my_samples.ecsv --reference-psd psd.xml --f-low 20.0 --snr-threshold 6 --min-triggers 2 --max-distance 1500 --waveform IMRPhenomD --nsamples 1000 -o inj.xml -j 10
+bayestar-inject --distribution-samples my_samples.ecsv --reference-psd psd.xml --f-low 20.0 --snr-threshold 8 --min-triggers 2 --max-distance 1500 --waveform IMRPhenomD --nsamples 1000 -o inj.xml -j 10
 
 
 
 #Getting Coincidences
 
 #!/bin/bash
-bayestar-realize-coincs -o coinc.xml inj.xml --reference-psd psd.xml --detector H1 L1 I1 --measurement-error gaussian-noise --snr-threshold 4.0 --net-snr-threshold 12.0 --min-triggers 2 --keep-subthreshold --duty-cycle 1 -j 10
+bayestar-realize-coincs -o coinc.xml inj.xml --reference-psd psd.xml --detector H1 L1 I1 --measurement-error gaussian-noise --snr-threshold 8.0 --net-snr-threshold 12.0 --min-triggers 2 --keep-subthreshold --duty-cycle 1 -j 10
 
 
 #Localizing found coincidences
 
 #!/bin/bash
-export OMP_NUM_THREADS=10
+export OMP_NUM_THREADS=15
 bayestar-localize-coincs coinc.xml --waveform IMRPhenomD --output sky_results --max-distance 1500 
 
 
