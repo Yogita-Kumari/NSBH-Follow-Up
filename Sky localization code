@@ -75,7 +75,7 @@ print(f"Median searched area: {np.median(searched_area):.2f} deg²")
 #For getting mollweide projection
 
 #!/bin/bash
-ligo-skymap-plot 0.fits -o 0.png --annotate --colorbar --contour 50 90
+ligo-skymap-plot 0.fits -o 0.png --annotate --inj-database coinc.sqlite --colorbar --contour 50 90
 
 
 
